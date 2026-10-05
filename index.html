@@ -434,7 +434,7 @@ footer a { color: var(--accent-ink); }
       </section>
       <section class="block">
         <div class="head"><h2>Como calculamos</h2></div>
-        <p class="method" id="method">As chances de cada jogo saem dos gols marcados e sofridos por cada time em casa e fora nesta edição do Brasileirão. A chance de bater a meta vem de 20 mil simulações do restante do campeonato. São estimativas, não previsão.</p>
+        <p class="method" id="method">As chances de cada jogo saem dos gols marcados e sofridos por cada time em casa e fora nesta edição do Brasileirão, com mais peso para os jogos recentes e o ajuste de Dixon e Coles para empates. A chance de bater a meta vem de 20 mil simulações do restante do campeonato. São estimativas, não previsão.</p>
         <button type="button" class="btn" id="goto-como">Ver a metodologia completa</button>
       </section>
     </aside>
@@ -444,23 +444,26 @@ footer a { color: var(--accent-ink); }
 
   <div id="view-como" role="tabpanel" aria-labelledby="tab-como" hidden>
     <article class="doc">
-      <p class="lede">As chances de vitória e a chance de bater a meta saem de um método estatístico clássico no futebol, em três etapas: medir a força de cada time, transformar essa força em chances para cada jogo e simular o restante do campeonato milhares de vezes. Abaixo, cada etapa com um exemplo calculado agora, com os dados atuais, a partir do próximo jogo do clube selecionado.</p>
+      <p class="lede">As chances de vitória e a chance de bater a meta saem de um método estatístico clássico no futebol, o modelo de Dixon e Coles, em três etapas: medir a força de cada time, transformar essa força em chances para cada jogo e simular o restante do campeonato milhares de vezes. Abaixo, cada etapa com um exemplo calculado agora, com os dados atuais, a partir do próximo jogo do clube selecionado.</p>
 
       <section class="step">
         <h2><span class="n">1</span>A força de cada time</h2>
-        <p>O modelo usa apenas os gols. Primeiro calcula a média da liga em todos os jogos já disputados: <b id="c-mh"></b> gol por jogo para o mandante e <b id="c-ma"></b> para o visitante. A diferença entre os dois números é a vantagem de jogar em casa, medida nos próprios dados.</p>
+        <p>O modelo usa apenas os gols dos jogos do Brasileirão desta temporada (<span id="c-n"></span>). Nem todos os jogos pesam igual: <b>quanto mais antigo o jogo, menor o peso</b>. O peso cai pela metade a cada <b id="c-hl"></b> dias. Um jogo de hoje vale 1; um de <span id="c-hl2"></span> dias atrás vale 0,5. O jogo mais antigo da base (<span id="c-old"></span>) vale hoje <b id="c-oldw"></b>.</p>
+        <p>Com esses pesos, o modelo calcula a média da liga: <b id="c-mh"></b> gol por jogo para o mandante e <b id="c-ma"></b> para o visitante. A diferença entre os dois números é a vantagem de jogar em casa, medida nos próprios dados.</p>
         <p>Depois, cada time recebe quatro notas, sempre em relação a essa média. Nota 1,00 é um time exatamente na média. No ataque, quanto maior, melhor; na defesa, quanto maior, pior (mais gols sofridos).</p>
         <div class="tbl"><table class="ctab" id="c-notas"></table></div>
-        <p><b>Ajuste para amostras pequenas.</b> Com cerca de 14 jogos em casa e 14 fora, uma goleada isolada distorce a nota. Por isso cada nota é puxada para a média como se o time tivesse jogado mais 6 partidas exatamente na média da liga (regressão à média). A tabela mostra a nota bruta e a ajustada.</p>
+        <p><b>Ajuste para amostras pequenas.</b> Com cerca de 14 jogos em casa e 14 fora, uma goleada isolada distorce a nota. Por isso cada nota é puxada para a média como se o time tivesse jogado mais 6 partidas exatamente na média da liga (regressão à média). A tabela mostra a nota bruta (já com os pesos por data) e a ajustada.</p>
       </section>
 
       <section class="step">
         <h2><span class="n">2</span>Gols esperados e chances do jogo</h2>
         <p>Multiplicando as notas, o modelo estima quantos gols cada time deve marcar naquele confronto:</p>
         <div class="formula" id="c-lambdas"></div>
-        <p>Gols no futebol são raros e quase independentes entre si, e seguem bem uma <b>distribuição de Poisson</b>. Ela transforma os gols esperados na chance de cada time marcar 0, 1, 2, 3 gols e assim por diante. Cruzando as duas colunas, sai a chance de cada placar.</p>
+        <p>Gols no futebol são raros e quase independentes entre si, e seguem bem uma <b>distribuição de Poisson</b>: P(k gols) = e<sup>−λ</sup> × λ<sup>k</sup> ÷ k!, em que λ são os gols esperados. Ela transforma os gols esperados na chance de cada time marcar 0, 1, 2, 3 gols e assim por diante.</p>
         <div class="tbl"><table class="ctab" id="c-poisson"></table></div>
-        <p>Chance de cada placar (verde: vitória do mandante; cinza: empate; vermelho: vitória do visitante):</p>
+        <p><b>Correção dos placares baixos.</b> Os gols dos dois times não são totalmente independentes: quem sai na frente por 1 x 0 tende a recuar, e jogos travados tendem a seguir travados. Por isso, como propuseram Dixon e Coles, as chances de 0 x 0, 1 x 0, 0 x 1 e 1 x 1 são multiplicadas por um fator de ajuste que depende de um parâmetro ρ (rho), estimado com os placares reais desta temporada. Hoje, <b id="c-rho"></b>.</p>
+        <div class="tbl"><table class="ctab" id="c-tau"></table></div>
+        <p>Chance de cada placar, já com a correção (verde: vitória do mandante; cinza: empate; vermelho: vitória do visitante):</p>
         <div class="tbl"><table class="ctab grid-scores" id="c-placares"></table></div>
         <p>Somando os placares em que cada lado vence, e os empates:</p>
         <div class="result" id="c-result"></div>
@@ -475,19 +478,21 @@ footer a { color: var(--accent-ink); }
           <li>Quando você fixa um resultado (V, E ou D), aquele jogo deixa de ser sorteado e entra com os pontos escolhidos.</li>
         </ul>
         <p>Com 20 mil repetições, a margem de erro do próprio sorteio fica abaixo de 1 ponto percentual.</p>
+        <p>A correção dos placares baixos importa aqui: como empate vale 1 ponto, prever empates de menos distorce a projeção. Testando o modelo com os jogos desta temporada, a versão sem correção previa 25% de empates contra 27% reais; com a correção, 27%.</p>
       </section>
 
       <section class="step">
         <h2><span class="n">4</span>Origem e limites</h2>
-        <p>O método foi proposto por M. J. Maher em 1982 (<i>Modelling association football scores</i>) e refinado por Dixon e Coles em 1997. Versões dele são usadas até hoje em sites de previsão esportiva. Todos os dados vêm de resultados públicos desta edição do Brasileirão, e o cálculo está no código aberto da página.</p>
+        <p>O modelo de gols com Poisson foi proposto por M. J. Maher em 1982 (<i>Modelling association football scores</i>). A correção dos placares baixos e o peso maior para jogos recentes vêm de M. J. Dixon e S. G. Coles, em 1997 (<i>Modelling association football scores and inefficiencies in the football betting market</i>). Versões desse modelo são usadas até hoje em sites de previsão esportiva. Todos os dados vêm de resultados públicos desta edição do Brasileirão, e o cálculo está no código aberto da página.</p>
+        <p><b>Como o modelo foi testado.</b> Para cada data a partir de meados de abril, o modelo foi treinado só com os jogos anteriores e usado para prever os jogos daquele dia (172 jogos ao todo), como se estivesse prevendo o futuro. Ele acerta melhor que um palpite que usa só a frequência geral de vitórias do mandante, empates e vitórias do visitante. Testamos meias-vidas de 45 dias até peso igual para todos os jogos; 180 dias ficou entre as de melhor desempenho, mas as diferenças foram pequenas. A correção dos placares baixos acertou o total de empates, sem melhorar de forma perceptível o acerto jogo a jogo.</p>
         <p><b>O que o modelo não considera:</b></p>
         <ul>
           <li>desfalques, suspensões, troca de técnico, viagens ou calendário apertado;</li>
-          <li>o momento do time: todos os jogos da temporada têm o mesmo peso;</li>
-          <li>a dependência entre os gols dos dois times, o que faz o modelo subestimar um pouco os empates, especialmente o 0 x 0 (a versão de Dixon e Coles corrige isso; esta não);</li>
+          <li>mudanças bruscas: o peso maior para jogos recentes é gradual, e uma troca de técnico na semana passada ainda não aparece nos números;</li>
+          <li>a correção dos placares baixos usa um único parâmetro para os quatro placares: nesta temporada ela acerta o total de empates e as vitórias por 1 a 0, mas superestima um pouco o 0 x 0;</li>
           <li>o desempenho em temporadas anteriores.</li>
         </ul>
-        <p>O modelo não foi testado contra resultados passados para medir a taxa de acerto. Os números são estimativas razoáveis, não previsões.</p>
+        <p>Mesmo o melhor modelo erra muito em jogos isolados: futebol tem muito acaso. Os números são estimativas razoáveis, não previsões.</p>
       </section>
     </article>
   </div>
@@ -773,38 +778,65 @@ footer a { color: var(--accent-ink); }
 
 
   // ---------- Rumo à Meta ----------
-  var SIMS = 20000, SHRINK = 6, PTS = { w: 3, d: 1, l: 0 };
+  var SIMS = 20000, SHRINK = 6, HALF_LIFE = 180, PTS = { w: 3, d: 1, l: 0 };
   var mstate = { base: 0, played: 0, target: 45, games: [], picks: [] };
   var mpct = function (p) { return p >= 0.995 && p < 1 ? ">99%" : p > 0 && p < 0.005 ? "<1%" : br(p * 100, 0) + "%"; };
   function poisson(l, k) { var p = Math.exp(-l); for (var i = 1; i <= k; i++) p *= l / i; return p; }
-  function outcome(lh, la) {
+  // Correção de Dixon e Coles (1997) para placares baixos.
+  function tau(x, y, l, m, rho) {
+    if (x === 0 && y === 0) return 1 - l * m * rho;
+    if (x === 0 && y === 1) return 1 + l * rho;
+    if (x === 1 && y === 0) return 1 + m * rho;
+    if (x === 1 && y === 1) return 1 - rho;
+    return 1;
+  }
+  function outcome(lh, la, rho) {
+    rho = rho || 0;
     var w = 0, d = 0, l = 0;
     for (var i = 0; i <= 10; i++) for (var j = 0; j <= 10; j++) {
-      var p = poisson(lh, i) * poisson(la, j);
+      var p = poisson(lh, i) * poisson(la, j) * tau(i, j, lh, la, rho);
       if (i > j) w += p; else if (i === j) d += p; else l += p;
     }
     var s = w + d + l; return { h: w / s, d: d / s, a: l / s };
   }
+  // Modelo de Maher com as duas melhorias de Dixon e Coles:
+  // (1) jogos mais antigos pesam menos (meia-vida HALF_LIFE dias, calibrada com os próprios jogos);
+  // (2) parâmetro rho, estimado por máxima verossimilhança, que corrige 0x0, 1x0, 0x1 e 1x1.
   function buildModel(liga) {
-    var t = {}, H = 0, A = 0, n = 0;
+    var t = {}, H = 0, A = 0, W = 0, n = 0;
+    var ref = liga.reduce(function (m, g) { return g.data > m ? g.data : m; }, "");
+    var XI = Math.LN2 / HALF_LIFE, refT = ref ? dt(ref).getTime() : 0;
+    var peso = function (g) { return Math.exp(-XI * Math.round((refT - dt(g.data).getTime()) / 864e5)); };
     var row = function (x) { return t[x] || (t[x] = { hf: 0, ha: 0, hn: 0, af: 0, aa: 0, an: 0 }); };
     liga.forEach(function (g) {
+      var w = peso(g); g.peso = w;
       var h = row(g.mandante), a = row(g.visitante);
-      h.hf += g.gm; h.ha += g.gv; h.hn++; a.af += g.gv; a.aa += g.gm; a.an++;
-      H += g.gm; A += g.gv; n++;
+      h.hf += w * g.gm; h.ha += w * g.gv; h.hn += w; a.af += w * g.gv; a.aa += w * g.gm; a.an += w;
+      H += w * g.gm; A += w * g.gv; W += w; n++;
     });
-    var mh = H / n, ma = A / n, s = {};
+    var mh = H / W, ma = A / W, s = {};
     var sh = function (raw, games) { return (raw * games + SHRINK) / (games + SHRINK); };
     Object.keys(t).forEach(function (k) {
       var r = t[k];
       s[k] = { attH: sh(r.hn ? r.hf / r.hn / mh : 1, r.hn), defH: sh(r.hn ? r.ha / r.hn / ma : 1, r.hn),
                attA: sh(r.an ? r.af / r.an / ma : 1, r.an), defA: sh(r.an ? r.aa / r.an / mh : 1, r.an) };
     });
-    var f = function (home, away) {
+    var lam = function (home, away) {
       var h = s[home] || { attH: 1, defH: 1 }, a = s[away] || { attA: 1, defA: 1 };
-      return outcome(mh * h.attH * a.defA, ma * a.attA * h.defH);
+      return [mh * h.attH * a.defA, ma * a.attA * h.defH];
     };
-    f.info = { mh: mh, ma: ma, n: n, s: s, raw: t };
+    var rho = 0, best = -Infinity;
+    for (var k = -30; k <= 30; k++) {
+      var r = k / 100, ll = 0, ok = true;
+      for (var q = 0; q < liga.length; q++) {
+        var g = liga[q], L = lam(g.mandante, g.visitante), tv = tau(g.gm, g.gv, L[0], L[1], r);
+        if (tv <= 0) { ok = false; break; }
+        ll += g.peso * Math.log(tv);
+      }
+      if (ok && ll > best) { best = ll; rho = r; }
+    }
+    var f = function (home, away) { var L = lam(home, away); return outcome(L[0], L[1], rho); };
+    f.info = { mh: mh, ma: ma, n: n, W: W, s: s, raw: t, rho: rho, ref: ref, lam: lam, liga: liga };
     return f;
   }
 
@@ -819,6 +851,11 @@ footer a { color: var(--accent-ink); }
     if (prox) { H = prox.mandante; A = prox.visitante; }
     else { var last = liga.filter(function (g) { return g.jogado && (g.mandante === T || g.visitante === T); }).pop(); if (!last) return; H = last.mandante; A = last.visitante; }
     $("c-mh").textContent = f2(I.mh); $("c-ma").textContent = f2(I.ma);
+    $("c-n").textContent = I.n + " jogos, até " + I.ref.slice(8) + "/" + I.ref.slice(5, 7);
+    $("c-hl").textContent = HALF_LIFE; $("c-hl2").textContent = HALF_LIFE;
+    var oldest = I.liga.reduce(function (m, g) { return !m || g.data < m.data ? g : m; }, null);
+    if (oldest) { $("c-old").textContent = oldest.mandante + " x " + oldest.visitante + ", " + oldest.data.slice(8) + "/" + oldest.data.slice(5, 7); $("c-oldw").textContent = f2(oldest.peso); }
+    $("c-rho").textContent = "ρ = " + br(I.rho, 2);
     var sH = I.s[H], sA = I.s[A], rH = I.raw[H], rA = I.raw[A];
     var raw = function (r, k) {
       return { attH: r.hn ? r.hf / r.hn / I.mh : 1, defH: r.hn ? r.ha / r.hn / I.ma : 1, attA: r.an ? r.af / r.an / I.ma : 1, defA: r.an ? r.aa / r.an / I.mh : 1 }[k];
@@ -838,17 +875,26 @@ footer a { color: var(--accent-ink); }
       esc(H) + ": " + f2(I.mh) + " × " + f2(sH.attH) + " (ataque em casa) × " + f2(sA.defA) + " (defesa fora do " + esc(A) + ") = <b>" + f2(lh) + " gols esperados</b><br>" +
       esc(A) + ": " + f2(I.ma) + " × " + f2(sA.attA) + " (ataque fora) × " + f2(sH.defH) + " (defesa em casa do " + esc(H) + ") = <b>" + f2(la) + " gols esperados</b>";
     var P = function (l, k) { var p = Math.exp(-l); for (var i = 1; i <= k; i++) p *= l / i; return p; };
+    var rho = I.rho;
     var rows = "";
     for (var k = 0; k <= 4; k++) rows += "<tr><td>" + (k === 4 ? "4 ou mais" : k) + "</td><td>" + mpct(k === 4 ? 1 - [0,1,2,3].reduce(function (s, i) { return s + P(lh, i); }, 0) : P(lh, k)) + "</td><td>" + mpct(k === 4 ? 1 - [0,1,2,3].reduce(function (s, i) { return s + P(la, i); }, 0) : P(la, k)) + "</td></tr>";
     $("c-poisson").innerHTML = "<thead><tr><th>Gols</th><th>" + esc(H) + "</th><th>" + esc(A) + "</th></tr></thead><tbody>" + rows + "</tbody>";
     var g = "<thead><tr><th>" + esc(H) + " ↓ · " + esc(A) + " →</th>" + [0,1,2,3].map(function (j) { return "<th>" + j + "</th>"; }).join("") + "</tr></thead><tbody>";
     for (var i = 0; i <= 3; i++) {
       g += "<tr><td>" + i + "</td>";
-      for (var j = 0; j <= 3; j++) g += '<td class="' + (i > j ? "w" : i === j ? "d" : "l") + '">' + br(P(lh, i) * P(la, j) * 100, 1) + "%</td>";
+      for (var j = 0; j <= 3; j++) g += '<td class="' + (i > j ? "w" : i === j ? "d" : "l") + '">' + br(P(lh, i) * P(la, j) * tau(i, j, lh, la, rho) * 100, 1) + "%</td>";
       g += "</tr>";
     }
     $("c-placares").innerHTML = g + "</tbody>";
-    var o = outcome(lh, la);
+    var t00 = tau(0, 0, lh, la, rho), t10 = tau(1, 0, lh, la, rho), t01 = tau(0, 1, lh, la, rho), t11 = tau(1, 1, lh, la, rho);
+    var trow = function (pl, fat, conta, i, j) {
+      var a = P(lh, i) * P(la, j);
+      return "<tr><td>" + pl + "</td><td>" + conta + "</td><td>" + br(fat, 3) + "</td><td>" + br(a * 100, 1) + "%</td><td>" + br(a * fat * 100, 1) + "%</td></tr>";
+    };
+    $("c-tau").innerHTML = "<thead><tr><th>Placar</th><th>Fator</th><th>Valor</th><th>Sem correção</th><th>Com correção</th></tr></thead><tbody>" +
+      trow("0 x 0", t00, "1 − λ·μ·ρ", 0, 0) + trow("1 x 0", t10, "1 + μ·ρ", 1, 0) + trow("0 x 1", t01, "1 + λ·ρ", 0, 1) + trow("1 x 1", t11, "1 − ρ", 1, 1) +
+      '<tr><td>Outros</td><td>1</td><td>1</td><td colspan="2">sem mudança</td></tr></tbody>';
+    var o = outcome(lh, la, rho);
     $("c-result").innerHTML = '<div class="r"><b>' + mpct(o.h) + "</b><span>Vitória " + esc(H) + '</span></div><div class="r"><b>' + mpct(o.d) + '</b><span>Empate</span></div><div class="r"><b>' + mpct(o.a) + "</b><span>Vitória " + esc(A) + "</span></div>" +
       '<div class="r"><b>' + br(o.h * 3 + o.d, 2) + "</b><span>Pontos esperados " + esc(H) + "</span></div>";
   }

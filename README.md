@@ -23,7 +23,7 @@ Para corrigir ou adiantar um resultado à mão, basta editar `gols_mandante` e `
 
 ## Como as probabilidades são calculadas
 
-Para cada jogo, os gols esperados de cada time saem do ataque e da defesa em casa e fora nesta edição do Brasileirão, puxados para a média da liga. As chances de vitória, empate e derrota vêm de uma distribuição de Poisson, e a chance de bater a meta de 20 mil simulações. São estimativas, não previsões.
+Modelo de Dixon e Coles (1997): os gols esperados de cada time saem do ataque e da defesa em casa e fora nesta edição do Brasileirão, com peso maior para jogos recentes (meia-vida de 180 dias) e notas puxadas para a média da liga. As chances de vitória, empate e derrota vêm de uma distribuição de Poisson com a correção de Dixon e Coles para 0x0, 1x0, 0x1 e 1x1 (parâmetro ρ estimado com os placares da temporada). A chance de bater a meta vem de 20 mil simulações. A explicação completa, com exemplo ao vivo, está na aba "Como calculamos" do painel. São estimativas, não previsões.
 
 ## Fontes
 
