@@ -270,6 +270,33 @@ footer a { color: var(--accent-ink); }
 .tabs button:focus-visible { outline: 2px solid var(--accent); outline-offset: -2px; }
 .goal { display: flex; flex-direction: column; gap: 4px; }
 .goal label { font-size: 14px; font-weight: 600; color: var(--text-muted); }
+
+#view-como .tbl { overflow-x: auto; max-width: 100%; }
+#view-como .step > * { min-width: 0; }
+#view-como .ctab + .ctab, #view-como .tbl + .tbl { margin-top: 8px; }
+#view-como .doc { max-width: 760px; display: flex; flex-direction: column; gap: 32px; }
+#view-como .lede { font-size: 18px; line-height: 1.55; margin: 0; }
+#view-como .step { display: flex; flex-direction: column; gap: 12px; }
+#view-como .step h2 { display: flex; align-items: center; gap: 12px; }
+#view-como .step .n { display: inline-grid; place-items: center; width: 32px; height: 32px; border-radius: var(--radius-sm); background: var(--accent); color: var(--accent-on); font-size: 18px; flex: none; }
+#view-como p, #view-como li { margin: 0; line-height: 1.6; }
+#view-como ul { margin: 0; padding-left: 20px; display: grid; gap: 6px; }
+#view-como .ctab { border-collapse: collapse; font-size: 14px; min-width: 100%; }
+#view-como .ctab th { text-align: right; font-size: 12px; font-weight: 600; text-transform: uppercase; letter-spacing: 0.06em; color: var(--text-muted); padding: 0 10px 8px; border-bottom: 1px solid var(--border-strong); white-space: nowrap; }
+#view-como .ctab td { text-align: right; padding: 8px 10px; border-bottom: 1px solid var(--border); font-family: var(--mono); font-variant-numeric: tabular-nums; white-space: nowrap; }
+#view-como .ctab th:first-child, #view-como .ctab td:first-child { text-align: left; font-family: var(--body); }
+#view-como .ctab td.sub { color: var(--text-muted); font-size: 12px; }
+#view-como .ctab td.hl { color: var(--accent-ink); font-weight: 600; }
+#view-como .grid-scores td.w { background: color-mix(in srgb, var(--success) 14%, transparent); }
+#view-como .grid-scores td.d { background: color-mix(in srgb, var(--neutral-chip) 16%, transparent); }
+#view-como .grid-scores td.l { background: color-mix(in srgb, var(--danger) 12%, transparent); }
+#view-como .formula { background: var(--surface-alt); border-radius: var(--radius-md); padding: 14px 16px; font-family: var(--mono); font-size: 14px; line-height: 1.8; overflow-x: auto; }
+#view-como .formula b { color: var(--accent-ink); }
+#view-como .result { display: grid; grid-template-columns: repeat(auto-fit, minmax(120px, 1fr)); gap: 12px; }
+#view-como .result .r { border: 1px solid var(--border); border-radius: var(--radius-md); padding: 12px 14px; }
+#view-como .result .r b { display: block; font-family: var(--display); font-weight: 800; font-size: 36px; line-height: 1; }
+#view-como .result .r span { font-size: 12px; color: var(--text-muted); text-transform: uppercase; letter-spacing: 0.06em; font-weight: 600; }
+#view-meta #goto-como { align-self: flex-start; }
 </style>
 </head>
 <body>
@@ -307,6 +334,7 @@ footer a { color: var(--accent-ink); }
   <nav class="tabs" role="tablist" aria-label="Visões">
     <button type="button" role="tab" id="tab-painel" data-v="painel" aria-selected="true" aria-controls="view-painel">Painel</button>
     <button type="button" role="tab" id="tab-meta" data-v="meta" aria-selected="false" aria-controls="view-meta">Rumo à Meta</button>
+    <button type="button" role="tab" id="tab-como" data-v="como" aria-selected="false" aria-controls="view-como">Como calculamos</button>
   </nav>
 
   <div id="view-painel" role="tabpanel" aria-labelledby="tab-painel">
@@ -406,11 +434,62 @@ footer a { color: var(--accent-ink); }
       </section>
       <section class="block">
         <div class="head"><h2>Como calculamos</h2></div>
-        <p class="method" id="method">Para cada jogo, estimamos os gols esperados de cada time a partir do ataque e da defesa em casa e fora nesta edição do Brasileirão, puxados para a média da liga para não exagerar amostras pequenas. As chances de vitória, empate e derrota saem de uma distribuição de Poisson. São estimativas, não previsão.</p>
+        <p class="method" id="method">As chances de cada jogo saem dos gols marcados e sofridos por cada time em casa e fora nesta edição do Brasileirão. A chance de bater a meta vem de 20 mil simulações do restante do campeonato. São estimativas, não previsão.</p>
+        <button type="button" class="btn" id="goto-como">Ver a metodologia completa</button>
       </section>
     </aside>
   </div>
 
+  </div>
+
+  <div id="view-como" role="tabpanel" aria-labelledby="tab-como" hidden>
+    <article class="doc">
+      <p class="lede">As chances de vitória e a chance de bater a meta saem de um método estatístico clássico no futebol, em três etapas: medir a força de cada time, transformar essa força em chances para cada jogo e simular o restante do campeonato milhares de vezes. Abaixo, cada etapa com um exemplo calculado agora, com os dados atuais, a partir do próximo jogo do clube selecionado.</p>
+
+      <section class="step">
+        <h2><span class="n">1</span>A força de cada time</h2>
+        <p>O modelo usa apenas os gols. Primeiro calcula a média da liga em todos os jogos já disputados: <b id="c-mh"></b> gol por jogo para o mandante e <b id="c-ma"></b> para o visitante. A diferença entre os dois números é a vantagem de jogar em casa, medida nos próprios dados.</p>
+        <p>Depois, cada time recebe quatro notas, sempre em relação a essa média. Nota 1,00 é um time exatamente na média. No ataque, quanto maior, melhor; na defesa, quanto maior, pior (mais gols sofridos).</p>
+        <div class="tbl"><table class="ctab" id="c-notas"></table></div>
+        <p><b>Ajuste para amostras pequenas.</b> Com cerca de 14 jogos em casa e 14 fora, uma goleada isolada distorce a nota. Por isso cada nota é puxada para a média como se o time tivesse jogado mais 6 partidas exatamente na média da liga (regressão à média). A tabela mostra a nota bruta e a ajustada.</p>
+      </section>
+
+      <section class="step">
+        <h2><span class="n">2</span>Gols esperados e chances do jogo</h2>
+        <p>Multiplicando as notas, o modelo estima quantos gols cada time deve marcar naquele confronto:</p>
+        <div class="formula" id="c-lambdas"></div>
+        <p>Gols no futebol são raros e quase independentes entre si, e seguem bem uma <b>distribuição de Poisson</b>. Ela transforma os gols esperados na chance de cada time marcar 0, 1, 2, 3 gols e assim por diante. Cruzando as duas colunas, sai a chance de cada placar.</p>
+        <div class="tbl"><table class="ctab" id="c-poisson"></table></div>
+        <p>Chance de cada placar (verde: vitória do mandante; cinza: empate; vermelho: vitória do visitante):</p>
+        <div class="tbl"><table class="ctab grid-scores" id="c-placares"></table></div>
+        <p>Somando os placares em que cada lado vence, e os empates:</p>
+        <div class="result" id="c-result"></div>
+      </section>
+
+      <section class="step">
+        <h2><span class="n">3</span>Simulação do restante do campeonato</h2>
+        <p>Com as chances de todos os jogos que faltam, a aba Rumo à Meta "joga" o campeonato <b>20 mil vezes</b>. Em cada repetição, cada jogo é sorteado de acordo com suas chances (num jogo de 60% de vitória, a vitória sai em cerca de 60 de cada 100 sorteios) e os pontos são somados.</p>
+        <ul>
+          <li>A <b>chance de bater a meta</b> é a fração das 20 mil temporadas em que o time chegou à meta.</li>
+          <li>O <b>gráfico de distribuição</b> mostra quantas vezes cada pontuação final apareceu.</li>
+          <li>Quando você fixa um resultado (V, E ou D), aquele jogo deixa de ser sorteado e entra com os pontos escolhidos.</li>
+        </ul>
+        <p>Com 20 mil repetições, a margem de erro do próprio sorteio fica abaixo de 1 ponto percentual.</p>
+      </section>
+
+      <section class="step">
+        <h2><span class="n">4</span>Origem e limites</h2>
+        <p>O método foi proposto por M. J. Maher em 1982 (<i>Modelling association football scores</i>) e refinado por Dixon e Coles em 1997. Versões dele são usadas até hoje em sites de previsão esportiva. Todos os dados vêm de resultados públicos desta edição do Brasileirão, e o cálculo está no código aberto da página.</p>
+        <p><b>O que o modelo não considera:</b></p>
+        <ul>
+          <li>desfalques, suspensões, troca de técnico, viagens ou calendário apertado;</li>
+          <li>o momento do time: todos os jogos da temporada têm o mesmo peso;</li>
+          <li>a dependência entre os gols dos dois times, o que faz o modelo subestimar um pouco os empates, especialmente o 0 x 0 (a versão de Dixon e Coles corrige isso; esta não);</li>
+          <li>o desempenho em temporadas anteriores.</li>
+        </ul>
+        <p>O modelo não foi testado contra resultados passados para medir a taxa de acerto. Os números são estimativas razoáveis, não previsões.</p>
+      </section>
+    </article>
   </div>
 
   <p class="note" id="err" hidden></p>
@@ -533,7 +612,7 @@ footer a { color: var(--accent-ink); }
     state.team = team; $("team").value = team; applyColors(team);
     store.set("painel-time", team);
     syncHash();
-    render(); loadMeta(); header();
+    render(); loadMeta(); renderComo(); header();
   }
   function setMando(m) {
     state.mando = m; store.set("painel-mando", m);
@@ -543,15 +622,15 @@ footer a { color: var(--accent-ink); }
 
   function header() {
     var T = state.team;
-    $("h1").textContent = state.view === "meta" ? "Rumo aos " + mstate.target : (NOME_PAINEL[T] || "Painel " + T);
+    $("h1").textContent = state.view === "meta" ? "Rumo aos " + mstate.target : state.view === "como" ? "Como calculamos" : (NOME_PAINEL[T] || "Painel " + T);
   }
   function syncHash() {
-    var h = (state.view === "meta" ? "meta-" : "") + slug(state.team);
+    var h = (state.view === "meta" ? "meta-" : state.view === "como" ? "como-" : "") + slug(state.team);
     try { if (location.hash.slice(1) !== h) history.replaceState(null, "", "#" + h); } catch (e) {}
   }
   function setView(v) {
     state.view = v; store.set("painel-view", v);
-    $("view-painel").hidden = v !== "painel"; $("view-meta").hidden = v !== "meta";
+    $("view-painel").hidden = v !== "painel"; $("view-meta").hidden = v !== "meta"; $("view-como").hidden = v !== "como";
     $("mando-field").hidden = v !== "painel"; $("goal-field").hidden = v !== "meta";
     document.querySelectorAll(".tabs button").forEach(function (b) { b.setAttribute("aria-selected", b.getAttribute("data-v") === v ? "true" : "false"); b.tabIndex = b.getAttribute("data-v") === v ? 0 : -1; });
     syncHash(); header();
@@ -559,8 +638,9 @@ footer a { color: var(--accent-ink); }
   function fromHash() {
     var h = location.hash.slice(1), v = "painel";
     if (h.indexOf("meta-") === 0) { v = "meta"; h = h.slice(5); }
+    else if (h.indexOf("como-") === 0) { v = "como"; h = h.slice(5); }
     var t = teams.filter(function (x) { return slug(x) === h; })[0];
-    return { team: t, view: t || h === "meta" ? v : null };
+    return { team: t, view: t || h === "meta" || h === "como" ? v : null };
   }
 
   function render() {
@@ -720,10 +800,57 @@ footer a { color: var(--accent-ink); }
       s[k] = { attH: sh(r.hn ? r.hf / r.hn / mh : 1, r.hn), defH: sh(r.hn ? r.ha / r.hn / ma : 1, r.hn),
                attA: sh(r.an ? r.af / r.an / ma : 1, r.an), defA: sh(r.an ? r.aa / r.an / mh : 1, r.an) };
     });
-    return function (home, away) {
+    var f = function (home, away) {
       var h = s[home] || { attH: 1, defH: 1 }, a = s[away] || { attA: 1, defA: 1 };
       return outcome(mh * h.attH * a.defA, ma * a.attA * h.defH);
     };
+    f.info = { mh: mh, ma: ma, n: n, s: s, raw: t };
+    return f;
+  }
+
+  function renderComo() {
+    if (!model || !model.info) return;
+    var I = model.info, T = state.team;
+    var f2 = function (x) { return br(x, 2); };
+    var hoje = new Date().toISOString().slice(0, 10);
+    var prox = liga.filter(function (g) { return !g.jogado && (g.mandante === T || g.visitante === T) && !(/adiad/i.test(g.observacao) && g.data < hoje); })
+      .sort(function (a, b) { return (a.data + a.hora).localeCompare(b.data + b.hora); })[0];
+    var H, A;
+    if (prox) { H = prox.mandante; A = prox.visitante; }
+    else { var last = liga.filter(function (g) { return g.jogado && (g.mandante === T || g.visitante === T); }).pop(); if (!last) return; H = last.mandante; A = last.visitante; }
+    $("c-mh").textContent = f2(I.mh); $("c-ma").textContent = f2(I.ma);
+    var sH = I.s[H], sA = I.s[A], rH = I.raw[H], rA = I.raw[A];
+    var raw = function (r, k) {
+      return { attH: r.hn ? r.hf / r.hn / I.mh : 1, defH: r.hn ? r.ha / r.hn / I.ma : 1, attA: r.an ? r.af / r.an / I.ma : 1, defA: r.an ? r.aa / r.an / I.mh : 1 }[k];
+    };
+    var dataTxt = prox ? (prox.data.slice(8) + "/" + prox.data.slice(5, 7)) : "último jogo";
+    var lin = function (lbl, k, det) {
+      return "<tr><td>" + lbl + '<span class="meta" style="display:block;font-size:12px;color:var(--text-muted)">' + det + "</span></td>" +
+        '<td class="sub">' + f2(raw(rH, k)) + '</td><td class="hl">' + f2(sH[k]) + '</td><td class="sub">' + f2(raw(rA, k)) + '</td><td class="hl">' + f2(sA[k]) + "</td></tr>";
+    };
+    $("c-notas").innerHTML = '<thead><tr><th>Nota</th><th colspan="2">' + esc(H) + '<br><span style="font-weight:400">bruta · ajustada</span></th><th colspan="2">' + esc(A) + '<br><span style="font-weight:400">bruta · ajustada</span></th></tr></thead><tbody>' +
+      lin("Ataque em casa", "attH", "gols marcados como mandante ÷ média") +
+      lin("Defesa em casa", "defH", "gols sofridos como mandante ÷ média") +
+      lin("Ataque fora", "attA", "gols marcados como visitante ÷ média") +
+      lin("Defesa fora", "defA", "gols sofridos como visitante ÷ média") + "</tbody>";
+    var lh = I.mh * sH.attH * sA.defA, la = I.ma * sA.attA * sH.defH;
+    $("c-lambdas").innerHTML = "Exemplo: <b>" + esc(H) + " x " + esc(A) + "</b> (" + dataTxt + ", " + esc(H) + " em casa)<br>" +
+      esc(H) + ": " + f2(I.mh) + " × " + f2(sH.attH) + " (ataque em casa) × " + f2(sA.defA) + " (defesa fora do " + esc(A) + ") = <b>" + f2(lh) + " gols esperados</b><br>" +
+      esc(A) + ": " + f2(I.ma) + " × " + f2(sA.attA) + " (ataque fora) × " + f2(sH.defH) + " (defesa em casa do " + esc(H) + ") = <b>" + f2(la) + " gols esperados</b>";
+    var P = function (l, k) { var p = Math.exp(-l); for (var i = 1; i <= k; i++) p *= l / i; return p; };
+    var rows = "";
+    for (var k = 0; k <= 4; k++) rows += "<tr><td>" + (k === 4 ? "4 ou mais" : k) + "</td><td>" + mpct(k === 4 ? 1 - [0,1,2,3].reduce(function (s, i) { return s + P(lh, i); }, 0) : P(lh, k)) + "</td><td>" + mpct(k === 4 ? 1 - [0,1,2,3].reduce(function (s, i) { return s + P(la, i); }, 0) : P(la, k)) + "</td></tr>";
+    $("c-poisson").innerHTML = "<thead><tr><th>Gols</th><th>" + esc(H) + "</th><th>" + esc(A) + "</th></tr></thead><tbody>" + rows + "</tbody>";
+    var g = "<thead><tr><th>" + esc(H) + " ↓ · " + esc(A) + " →</th>" + [0,1,2,3].map(function (j) { return "<th>" + j + "</th>"; }).join("") + "</tr></thead><tbody>";
+    for (var i = 0; i <= 3; i++) {
+      g += "<tr><td>" + i + "</td>";
+      for (var j = 0; j <= 3; j++) g += '<td class="' + (i > j ? "w" : i === j ? "d" : "l") + '">' + br(P(lh, i) * P(la, j) * 100, 1) + "%</td>";
+      g += "</tr>";
+    }
+    $("c-placares").innerHTML = g + "</tbody>";
+    var o = outcome(lh, la);
+    $("c-result").innerHTML = '<div class="r"><b>' + mpct(o.h) + "</b><span>Vitória " + esc(H) + '</span></div><div class="r"><b>' + mpct(o.d) + '</b><span>Empate</span></div><div class="r"><b>' + mpct(o.a) + "</b><span>Vitória " + esc(A) + "</span></div>" +
+      '<div class="r"><b>' + br(o.h * 3 + o.d, 2) + "</b><span>Pontos esperados " + esc(H) + "</span></div>";
   }
 
   function loadMeta() {
@@ -853,10 +980,11 @@ footer a { color: var(--accent-ink); }
     var tr = e.target.closest("tr[data-team]"); if (!tr) return;
     setTeam(tr.getAttribute("data-team")); window.scrollTo({ top: 0, behavior: "smooth" });
   });
+  $("goto-como").addEventListener("click", function () { setView("como"); window.scrollTo({ top: 0, behavior: "smooth" }); });
   document.querySelector(".tabs").addEventListener("click", function (e) { var b = e.target.closest("button[data-v]"); if (b) setView(b.getAttribute("data-v")); });
   document.querySelector(".tabs").addEventListener("keydown", function (e) {
     if (e.key !== "ArrowRight" && e.key !== "ArrowLeft") return;
-    var v = state.view === "painel" ? "meta" : "painel"; setView(v); $("tab-" + v).focus();
+    var order = ["painel", "meta", "como"], i = order.indexOf(state.view); var v = order[(i + (e.key === "ArrowRight" ? 1 : 2)) % 3]; setView(v); $("tab-" + v).focus();
   });
   window.addEventListener("hashchange", function () {
     var h = fromHash();
@@ -881,7 +1009,7 @@ footer a { color: var(--accent-ink); }
     var m = store.get("painel-mando"); state.mando = MANDO_TXT.hasOwnProperty(m) ? m : "todos";
     document.querySelectorAll("#mando button").forEach(function (b) { b.setAttribute("aria-pressed", b.getAttribute("data-m") === state.mando ? "true" : "false"); });
     var h = fromHash(), sv = store.get("painel-view");
-    state.view = h.view || (sv === "meta" ? "meta" : "painel");
+    state.view = h.view || (sv === "meta" || sv === "como" ? sv : "painel");
     setView(state.view);
     setTeam(h.team || store.get("painel-time") || DEFAULT);
   }).catch(function (e) {
