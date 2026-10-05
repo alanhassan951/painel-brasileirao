@@ -9,9 +9,17 @@ As cores da página mudam de acordo com o clube escolhido. Links diretos: `#sao-
 
 ## Como atualizar
 
-Tudo é calculado a partir de `dados/jogos.csv`, uma linha por jogo. Conforme as partidas acontecem, preencha `gols_mandante` e `gols_visitante` na linha do jogo e faça o commit. O GitHub Pages republica sozinho em cerca de um minuto.
+Tudo é calculado a partir de `dados/jogos.csv`, uma linha por jogo. Colunas: `competicao, fase, data, hora, mandante, visitante, gols_mandante, gols_visitante, observacao`.
 
-Colunas: `competicao, fase, data, hora, mandante, visitante, gols_mandante, gols_visitante, observacao`.
+Os jogos do Brasileirão são atualizados a partir do [openfootball](https://github.com/openfootball/football.json) com:
+
+```
+python3 scripts/atualizar_openfootball.py
+```
+
+O script atualiza datas, horários e placares, nunca apaga um placar já preenchido e não mexe nos jogos de outras competições. Uma tarefa agendada roda esse script a cada 3 dias e faz o commit; o GitHub Pages republica sozinho em cerca de um minuto.
+
+Para corrigir ou adiantar um resultado à mão, basta editar `gols_mandante` e `gols_visitante` na linha do jogo e fazer o commit.
 
 ## Como as probabilidades são calculadas
 
