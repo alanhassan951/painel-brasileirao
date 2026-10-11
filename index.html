@@ -314,6 +314,7 @@ footer a { color: var(--accent-ink); }
 #view-meta .rec .opp .meta { display: block; font-size: 12px; font-weight: 400; color: var(--text-muted); }
 #view-meta .rec .score { font-family: var(--display); font-weight: 800; font-size: 22px; white-space: nowrap; }
 #view-meta .rec .pts { font-family: var(--mono); font-size: 12px; color: var(--text-muted); min-width: 40px; text-align: right; }
+#view-painel .next { grid-template-columns: repeat(auto-fit, minmax(230px, 1fr)); gap: 16px; }
 </style>
 </head>
 <body>
@@ -391,18 +392,7 @@ footer a { color: var(--accent-ink); }
       <span class="note" id="tab-note">Desempate: pontos, vitórias, saldo de gols e gols pró. Toque num clube para abrir o painel dele.</span>
     </section>
 
-    <section class="block">
-      <div class="head"><h2>Por competição</h2><span class="note" id="comp-note"></span></div>
-      <div class="tbl">
-        <table class="scorers comp">
-          <thead><tr><th>Competição</th><th>J</th><th>V</th><th>E</th><th>D</th><th>Saldo</th></tr></thead>
-          <tbody id="comp"></tbody>
-        </table>
-      </div>
-      <span class="note" id="comp-extra"></span>
-    </section>
-
-    <section class="block">
+    <section class="block wide">
       <div class="head"><h2>Próximos jogos</h2><span class="note" id="next-note"></span></div>
       <div class="next" id="next"></div>
       <span class="note">Bloco preenchido: em casa. Contorno: fora.</span>
@@ -771,18 +761,6 @@ footer a { color: var(--accent-ink); }
     }).join("");
     $("tab-note").textContent = (M === "todos" ? "Desempate: pontos, vitórias, saldo de gols e gols pró." : "Só os jogos " + F + " de cada clube; G6 e Z4 valem apenas na tabela geral.") + " Toque num clube para abrir o painel dele.";
 
-    var comps = [];
-    sp.forEach(function (g) { if (comps.indexOf(g.competicao) < 0) comps.push(g.competicao); });
-    $("comp").innerHTML = comps.map(function (c) {
-      var list = sp.filter(function (g) { return g.competicao === c; });
-      var t = tally(list.filter(function (g) { return g.jogado; }));
-      var stt = spAll.filter(function (g) { return g.competicao === c && /eliminad|campe/i.test(g.observacao); }).pop();
-      var status = spAll.some(function (g) { return g.competicao === c && !g.jogado; }) ? "em andamento" : stt ? stt.observacao.replace(/\s*\(.*\)/, "") : "";
-      return "<tr><td>" + esc(c) + (status ? '<span class="meta">' + esc(status) + "</span>" : "") + "</td><td>" + t.j + "</td><td>" + t.v + "</td><td>" + t.e + "</td><td>" + t.d + "</td><td>" + sign(t.saldo) + "</td></tr>";
-    }).join("") + (comps.length > 1 ? '<tr class="tot"><td>Temporada</td><td>' + T.j + "</td><td>" + T.v + "</td><td>" + T.e + "</td><td>" + T.d + "</td><td>" + sign(T.saldo) + "</td></tr>" : "");
-    $("comp-note").textContent = T.gp + " gols pró · " + T.gc + " contra" + (F ? " · " + F : "");
-    $("comp-extra").textContent = outras ? "" : "A base só tem as outras competições do São Paulo; para este clube, apenas o Brasileirão.";
-    $("comp-extra").hidden = outras;
 
     $("next-note").textContent = future.length + " jogos pela frente" + (F ? " " + F : "");
     var hoje = new Date().toISOString().slice(0, 10);
