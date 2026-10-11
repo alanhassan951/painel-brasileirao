@@ -136,7 +136,7 @@ def ler_evento(ev):
         "gm": gols(times["home"]) if encerrado else None,
         "gv": gols(times["away"]) if encerrado else None,
         "adiado": "POSTPONED" in nome_status or "SUSPENDED" in nome_status or "CANCELED" in nome_status,
-        "hora_definida": not ev.get("timeValid") is False,
+        "hora_definida": ev.get("timeValid") is not False and comp.get("timeValid") is not False,
     }
 
 
@@ -151,6 +151,16 @@ def main():
         j = ler_evento(ev)
         if j:
             api[(j["casa"], j["fora"])] = j
+    # Rodadas ainda sem horário definido vêm com o mesmo horário provisório para todos os jogos
+    # do dia; nesse caso o horário é tratado como "a definir".
+    por_dia = {}
+    for j in api.values():
+        if j["gm"] is None:
+            por_dia.setdefault(j["data"], []).append(j)
+    for jogos_do_dia in por_dia.values():
+        if len(jogos_do_dia) >= 5 and len({j["hora"] for j in jogos_do_dia}) == 1:
+            for j in jogos_do_dia:
+                j["hora_definida"] = False
     print(f"API: {len(api)} jogos do Brasileirão, {sum(1 for j in api.values() if j['gm'] is not None)} encerrados.")
     if len(api) < 300:
         sys.exit(f"Erro: a API trouxe só {len(api)} jogos (esperado perto de 380). Nada foi gravado.")
@@ -188,7 +198,7 @@ def main():
                 r["observacao"] = "Adiado; nova data a definir"
                 mudancas.append(f"{r['mandante']} x {r['visitante']}: adiado")
         elif j["data"] >= hoje or r["data"] < hoje:
-            nova_hora = j["hora"] if j["hora_definida"] else r["hora"]
+            nova_hora = j["hora"] if j["hora_definida"] else ""
             if (j["data"], nova_hora) != (r["data"], r["hora"]):
                 mudancas.append(f"{r['mandante']} x {r['visitante']}: {r['data']} {r['hora']} -> {j['data']} {nova_hora}".rstrip())
                 r["data"], r["hora"] = j["data"], nova_hora
