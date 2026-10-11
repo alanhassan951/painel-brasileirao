@@ -297,6 +297,23 @@ footer a { color: var(--accent-ink); }
 #view-como .result .r b { display: block; font-family: var(--display); font-weight: 800; font-size: 36px; line-height: 1; }
 #view-como .result .r span { font-size: 12px; color: var(--text-muted); text-transform: uppercase; letter-spacing: 0.06em; font-weight: 600; }
 #view-meta #goto-como { align-self: flex-start; }
+
+#view-meta .maincol { display: flex; flex-direction: column; gap: 16px; min-width: 0; }
+#view-meta .rec-sum { display: flex; flex-wrap: wrap; align-items: center; gap: 8px 16px; font-size: 14px; color: var(--text-muted); }
+#view-meta .rec-sum .chips { display: inline-flex; gap: 4px; }
+#view-meta .rec-sum b { color: var(--text); }
+#view-meta .rec-sum .pace { font-weight: 600; }
+#view-meta .rec-sum .pace.ok { color: var(--success); } #view-meta .rec-sum .pace.bad { color: var(--danger); }
+#view-meta .recs { display: flex; flex-direction: column; }
+#view-meta .rec { display: grid; grid-template-columns: 28px minmax(0, 1fr) auto auto; gap: 12px; align-items: center; padding-block: 10px; border-top: 1px solid var(--border); }
+#view-meta .rec:first-child { border-top: 0; }
+#view-meta .chip { width: 28px; height: 28px; border-radius: var(--radius-sm); display: grid; place-items: center; color: #fff; font-family: var(--display); font-weight: 800; font-size: 16px; }
+#view-meta .chip.sm { width: 22px; height: 22px; font-size: 13px; }
+#view-meta .chip.w { background: var(--success); } #view-meta .chip.d { background: var(--neutral-chip); } #view-meta .chip.l { background: var(--danger); }
+#view-meta .rec .opp { font-weight: 600; min-width: 0; }
+#view-meta .rec .opp .meta { display: block; font-size: 12px; font-weight: 400; color: var(--text-muted); }
+#view-meta .rec .score { font-family: var(--display); font-weight: 800; font-size: 22px; white-space: nowrap; }
+#view-meta .rec .pts { font-family: var(--mono); font-size: 12px; color: var(--text-muted); min-width: 40px; text-align: right; }
 </style>
 </head>
 <body>
@@ -406,6 +423,12 @@ footer a { color: var(--accent-ink); }
   </section>
 
   <div class="grid">
+    <div class="maincol">
+    <section class="block" id="rec-block">
+      <div class="head"><h2>Últimos resultados</h2><span class="note" id="rec-note"></span></div>
+      <div class="rec-sum" id="rec-sum"></div>
+      <div class="recs" id="recs"></div>
+    </section>
     <section class="block">
       <div class="head"><h2>Jogos restantes</h2><span class="note" id="games-note"></span></div>
       <span class="note">Bloco preenchido: em casa. Contorno: fora.</span>
@@ -417,6 +440,7 @@ footer a { color: var(--accent-ink); }
       <div class="games" id="games"></div>
     </section>
 
+    </div>
     <aside class="side">
       <section class="block">
         <div class="head"><h2>Chance de bater a meta</h2></div>
@@ -899,6 +923,17 @@ footer a { color: var(--accent-ink); }
       '<div class="r"><b>' + br(o.h * 3 + o.d, 2) + "</b><span>Pontos esperados " + esc(H) + "</span></div>";
   }
 
+  function renderRecent() {
+    var R = mstate.recent || [], L = { w: "V", d: "E", l: "D" };
+    $("rec-block").hidden = !R.length;
+    $("rec-note").textContent = "Brasileirão · " + R.length + " últimos jogos";
+    $("recs").innerHTML = R.map(function (g) {
+      var pts = g.r === "w" ? 3 : g.r === "d" ? 1 : 0;
+      return '<div class="rec"><span class="chip ' + g.r + '">' + L[g.r] + '</span><span class="opp">' + esc(g.adv) +
+        '<span class="meta">' + g.data.slice(8) + "/" + g.data.slice(5, 7) + " · " + (g.casa ? "casa" : "fora") + " · " + esc(g.fase) + '</span></span>' +
+        '<span class="score num">' + g.gp + " x " + g.gc + '</span><span class="pts">+' + pts + (pts === 1 ? " pt" : " pts") + "</span></div>";
+    }).join("");
+  }
   function loadMeta() {
     var team = state.team;
     var mine = liga.filter(function (g) { return g.mandante === team || g.visitante === team; });
@@ -916,7 +951,12 @@ footer a { color: var(--accent-ink); }
     mstate.picks = saved && saved.n === mstate.games.length ? saved.picks : mstate.games.map(function () { return "a"; });
     mstate.target = saved && saved.target ? saved.target : 45;
     $("target").value = mstate.target;
-    renderGames(); update();
+    var played = mine.filter(function (g) { return g.jogado; }).sort(function (a, b) { return (b.data + b.hora).localeCompare(a.data + a.hora); });
+    mstate.recent = played.slice(0, 5).map(function (g) {
+      var casa = g.mandante === team, gp = casa ? g.gm : g.gv, gc = casa ? g.gv : g.gm;
+      return { data: g.data, fase: g.fase, casa: casa, adv: casa ? g.visitante : g.mandante, gp: gp, gc: gc, r: gp > gc ? "w" : gp === gc ? "d" : "l" };
+    });
+    renderRecent(); renderGames(); update();
   }
 
   function save() { store.set("rumo-sim-" + slug(state.team), { n: mstate.games.length, picks: mstate.picks, target: mstate.target }); }
@@ -950,6 +990,14 @@ footer a { color: var(--accent-ink); }
   function update() {
     var g = mstate.games, n = g.length, base = mstate.base, target = mstate.target;
     var falta = Math.max(0, target - base), disputa = n * 3;
+    var R = mstate.recent || [], rpts = R.reduce(function (s, g) { return s + (g.r === "w" ? 3 : g.r === "d" ? 1 : 0); }, 0);
+    if (R.length) {
+      var rr = rpts / (R.length * 3), need = disputa ? falta / disputa : 0;
+      $("rec-sum").innerHTML = '<span class="chips">' + R.slice().reverse().map(function (g) { return '<span class="chip sm ' + g.r + '">' + { w: "V", d: "E", l: "D" }[g.r] + "</span>"; }).join("") + "</span>" +
+        "<span><b>" + rpts + " de " + R.length * 3 + "</b> pontos (" + br(rr * 100, 0) + "%)</span>" +
+        (base >= target ? '<span class="pace ok">Meta já atingida</span>' :
+          '<span class="pace ' + (rr >= need ? "ok" : "bad") + '">' + (rr >= need ? "Ritmo recente acima" : "Ritmo recente abaixo") + " do necessário (" + br(need * 100, 0) + "%)</span>");
+    }
     var sim = simulate();
     var exp = sim.open.reduce(function (s, p) { return s + p.w * 3 + p.d; }, 0);
     var sure = sim.fixed, proj = base + sure + exp, maxPossible = base + sure + sim.open.length * 3;
