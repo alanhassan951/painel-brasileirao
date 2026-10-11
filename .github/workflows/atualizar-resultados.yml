@@ -30,7 +30,17 @@ jobs:
           python-version: "3.12"
 
       - name: Buscar resultados na API
-        run: python3 scripts/atualizar_resultados.py
+        shell: bash
+        run: |
+          set +e
+          python3 scripts/atualizar_resultados.py > saida.txt 2>&1
+          status=$?
+          cat saida.txt
+          # Mostra as últimas linhas como anotações, visíveis no resumo da execução.
+          nivel=notice; [ $status -ne 0 ] && nivel=error
+          tail -n 8 saida.txt | while IFS= read -r linha; do echo "::${nivel}::${linha}"; done
+          rm -f saida.txt
+          exit $status
 
       - name: Salvar mudanças
         run: |
