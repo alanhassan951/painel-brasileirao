@@ -80,16 +80,28 @@ def baixar(url):
 
 def eventos_da_api():
     ini, fim = TEMPORADA
-    dados = baixar(f"{API}?dates={ini:%Y%m%d}-{fim:%Y%m%d}&limit=1000")
-    eventos = dados.get("events", [])
+    try:
+        eventos = baixar(f"{API}?dates={ini:%Y%m%d}-{fim:%Y%m%d}&limit=1000").get("events", [])
+    except Exception as e:  # noqa: BLE001
+        print(f"Consulta por intervalo não aceita ({e}).")
+        eventos = []
     if len(eventos) >= 300:
         return eventos
-    # Alguns períodos não vêm completos na consulta por intervalo: consulta dia a dia.
+    # A API nem sempre aceita intervalos longos: consulta dia a dia.
     print(f"Consulta por intervalo trouxe {len(eventos)} jogos; consultando dia a dia...")
     vistos, eventos = set(), []
     d = ini
+    falhas = 0
     while d <= fim:
-        for ev in baixar(f"{API}?dates={d:%Y%m%d}").get("events", []):
+        try:
+            dia = baixar(f"{API}?dates={d:%Y%m%d}").get("events", [])
+        except Exception as e:  # noqa: BLE001
+            falhas += 1
+            print(f"Aviso: falha ao consultar {d:%d/%m} ({e}).")
+            if falhas > 10:
+                sys.exit("Erro: muitas falhas ao consultar a API. Nada foi gravado.")
+            dia = []
+        for ev in dia:
             if ev.get("id") not in vistos:
                 vistos.add(ev.get("id"))
                 eventos.append(ev)
