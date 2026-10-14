@@ -515,9 +515,9 @@ footer a { color: var(--accent-ink); }
 
   <footer>
     <div class="stripe" aria-hidden="true" style="max-width:120px"><i></i><i></i><i></i></div>
-    <span>Tudo aqui é calculado a partir de dados/jogos.csv: os 380 jogos do Brasileirão e os jogos do São Paulo nas outras competições.</span>
+    <span>Tudo aqui é calculado a partir de dados/jogos.csv, com os 380 jogos do Brasileirão 2026. Nenhuma outra competição entra nos números.</span>
     <span>Projeto de fã, não oficial e sem vínculo com nenhum clube. As cores apenas evocam as de cada time; não há escudos nem marcas.</span>
-    <span>Fontes: <a href="https://github.com/openfootball/football.json">openfootball</a> (Brasileirão), <a href="https://www.goal.com/br/equipe/sao-paulo/partidas-resultados/5p301ikmaba9gesscss3zo745">Goal</a> e <a href="https://www.arqtricolor.com/ultimas/sao-paulo-campanha-paulistao-2026-2/">Arquibancada Tricolor</a> (demais competições do São Paulo).</span>
+    <span>Fonte: API pública de placares da ESPN, atualizada automaticamente; tabela inicial a partir do <a href="https://github.com/openfootball/football.json">openfootball</a>.</span>
   </footer>
 </div>
 
@@ -680,7 +680,6 @@ footer a { color: var(--accent-ink); }
     var L = tally(spLiga), T = tally(played), last = played[played.length - 1];
     var me = tab.filter(function (r) { return r.clube === TIME; })[0];
     var meGeral = geral.filter(function (r) { return r.clube === TIME; })[0];
-    var outras = spAll.some(function (g) { return g.competicao !== LIGA; });
 
     $("eyebrow").textContent = TIME + " · Temporada " + (last ? last.data.slice(0, 4) : "2026");
     $("stamp").textContent = "Dados até a " + rodada + "ª rodada do Brasileirão" + (last ? " · último jogo em " + ddmm(last.data) : "");
@@ -711,12 +710,12 @@ footer a { color: var(--accent-ink); }
       $("stats").innerHTML = st(L.j ? br(L.gp / L.j, 2) : "–", "Gols pró / jogo", true) + st(L.j ? br(L.gc / L.j, 2) : "–", "Gols contra / jogo") + st(spLigaFut.length * 3, "Pontos " + F + " em disputa");
     }
 
-    $("form-note").textContent = (outras ? "Todas as competições" : LIGA) + (F ? " · " + F : "");
+    $("form-note").textContent = LIGA + (F ? " · " + F : "");
     $("form").innerHTML = played.slice(-5).reverse().map(function (g) {
       var r = res(g.gp, g.gc);
-      var meta = [ddmm(g.data), g.competicao + (g.fase ? ", " + g.fase : ""), g.mando].join(" · ");
+      var meta = [ddmm(g.data), g.fase, g.mando].join(" · ");
       return '<div class="game"><span class="chip ' + r[0] + '">' + r[1] + '</span><span class="opp">' + esc(g.adversario) +
-        ' <span class="meta">' + esc(meta) + (g.observacao && /agregado/i.test(g.observacao) ? " · " + esc(g.observacao) : "") + '</span></span><span class="score num">' + g.gp + " x " + g.gc + "</span></div>";
+        ' <span class="meta">' + esc(meta) + "" + '</span></span><span class="score num">' + g.gp + " x " + g.gc + "</span></div>";
     }).join("") || '<span class="note">Nenhum jogo disputado com este filtro.</span>';
 
     if (meGeral && geral.length >= 17) {
@@ -774,7 +773,7 @@ footer a { color: var(--accent-ink); }
       var box = tbd ? '<div class="date"><b style="font-size:14px;padding-block:5px">A DEF.</b></div>' : '<div class="date"><b>' + p.data.slice(8) + "</b><span>" + MESES[d.getMonth()] + "</span></div>";
       return '<div class="fx' + (p.mando === "fora" ? " away" : "") + '">' + box + '<div class="t">' +
         esc(p.adversario) + (tag ? ' <span class="tag">' + esc(tag) + "</span>" : "") +
-        '<span class="meta">' + [tbd ? "adiado, nova data a definir" : DIAS[d.getDay()] + ", " + hora, p.mando, (p.competicao !== LIGA ? p.competicao + ", " : "") + p.fase].map(esc).join(" · ") + "</span></div></div>";
+        '<span class="meta">' + [tbd ? "adiado, nova data a definir" : DIAS[d.getDay()] + ", " + hora, p.mando, p.fase].map(esc).join(" · ") + "</span></div></div>";
     }).join("") || '<span class="note">Sem jogos futuros com este filtro.</span>';
   }
 
@@ -1068,7 +1067,7 @@ footer a { color: var(--accent-ink); }
     if (!r.ok) throw new Error("jogos.csv não foi encontrado");
     return r.text();
   }).then(function (text) {
-    all = parseCSV(text).map(function (r) {
+    all = parseCSV(text).filter(function (r) { return r.competicao === LIGA; }).map(function (r) {
       r.gm = num(r.gols_mandante); r.gv = num(r.gols_visitante); r.jogado = r.gm !== null && r.gv !== null; return r;
     }).sort(function (a, b) { return (a.data + a.hora).localeCompare(b.data + b.hora); });
     liga = all.filter(function (g) { return g.competicao === LIGA; });

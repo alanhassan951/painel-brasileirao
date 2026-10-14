@@ -5,7 +5,7 @@ Fonte: https://site.api.espn.com/apis/site/v2/sports/soccer/bra.1/scoreboard
 (API pública, sem chave de acesso).
 
 Regras:
-- Só mexe nas linhas com competicao = "Brasileirão"; as demais ficam como estão.
+- A base tem só jogos do Brasileirão (competicao = "Brasileirão"); nenhuma outra competição entra.
 - Cada jogo é identificado pelo par mandante x visitante (único no turno e returno).
 - Preenche o placar de jogos encerrados que ainda estão sem placar na base.
 - Nunca apaga nem sobrescreve um placar já preenchido. Se a API discordar de um

@@ -9,6 +9,8 @@ As cores da página mudam de acordo com o clube escolhido. Links diretos: `#sao-
 
 ## Como atualizar
 
+Somente o Brasileirão 2026 entra no painel: a base não tem jogos de outras competições.
+
 Tudo é calculado a partir de `dados/jogos.csv`, uma linha por jogo. Colunas: `competicao, fase, data, hora, mandante, visitante, gols_mandante, gols_visitante, observacao`.
 
 Os jogos do Brasileirão são atualizados automaticamente pela API pública de placares da ESPN (sem chave de acesso). O workflow `.github/workflows/atualizar-resultados.yml` roda a cada 3 dias às 07:30 (horário de Brasília) e executa:
@@ -17,7 +19,7 @@ Os jogos do Brasileirão são atualizados automaticamente pela API pública de p
 python3 scripts/atualizar_resultados.py
 ```
 
-O script preenche os placares de jogos encerrados, atualiza datas e horários de jogos futuros e marca adiamentos. Ele nunca apaga nem sobrescreve um placar já preenchido, não mexe nos jogos de outras competições e para sem gravar nada se a API discordar de muitos placares já conhecidos. Quando há mudança, o próprio workflow faz o commit e o GitHub Pages republica o site em cerca de um minuto.
+O script preenche os placares de jogos encerrados, atualiza datas e horários de jogos futuros e marca adiamentos. Ele nunca apaga nem sobrescreve um placar já preenchido e para sem gravar nada se a API discordar de muitos placares já conhecidos. Quando há mudança, o próprio workflow faz o commit e o GitHub Pages republica o site em cerca de um minuto.
 
 Para rodar na hora, abra a aba **Actions** do repositório, escolha **Atualizar resultados** e clique em **Run workflow**.
 
@@ -30,6 +32,5 @@ Modelo de Dixon e Coles (1997): os gols esperados de cada time saem do ataque e 
 ## Fontes
 
 - Brasileirão: API pública de placares da ESPN (atualização automática); tabela inicial a partir do [openfootball/football.json](https://github.com/openfootball/football.json)
-- Demais competições do São Paulo: Goal e Arquibancada Tricolor
 
 Projeto de fã, não oficial e sem vínculo com nenhum clube. As cores apenas evocam as de cada time; não há escudos nem marcas.
